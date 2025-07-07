@@ -47,13 +47,15 @@ function inlineAssets(html) {
     return `<script nomodule>\n${js}\n</script>`;
   });
 
-  // Inline SVG tile images as base64 (unchanged)
-  html = html.replace(/<img([^>]+)src=["']\/tiles\/([^"']+\.svg)["']([^>]*)>/g, (match, before, svgName, after) => {
+  // Replace all /tiles/NAME.svg references with base64 data
+  html = html.replace(/['"`]\/tiles\/([A-Za-z0-9\-]+\.svg)['"`]/g, (match, svgName) => {
+    const tileName = svgName.replace('.svg', '');
     const svgPath = path.join(tilesDir, svgName);
     if (fs.existsSync(svgPath)) {
       const base64 = getBase64Svg(svgPath);
-      return `<img${before}src=\"${base64}\"${after}>`;
+      return `"${base64}"`;
     } else {
+      console.log(`Warning: SVG file not found: ${svgPath}`);
       return match;
     }
   });
@@ -61,16 +63,35 @@ function inlineAssets(html) {
   return html;
 }
 
-function main() {
-  const indexHtmlPath = path.join(distDir, 'index.html');
-  if (!fs.existsSync(indexHtmlPath)) {
-    console.error('dist/index.html not found. Please run your build first.');
-    process.exit(1);
-  }
-  let html = fs.readFileSync(indexHtmlPath, 'utf8');
-  html = inlineAssets(html);
-  fs.writeFileSync(outFile, html, 'utf8');
-  console.log(`Created ${outFile}`);
+// --- MAIN ---
+console.log('Bundling HTML...');
+
+// Check if dist directory exists
+if (!fs.existsSync(distDir)) {
+  console.error('Error: dist directory not found. Run "npm run build" first.');
+  process.exit(1);
 }
 
-main(); 
+// Check if tiles directory exists
+if (!fs.existsSync(tilesDir)) {
+  console.error('Error: tiles directory not found at', tilesDir);
+  process.exit(1);
+}
+
+// Read the HTML file
+const htmlFile = path.join(distDir, 'index.html');
+if (!fs.existsSync(htmlFile)) {
+  console.error('Error: index.html not found in dist directory');
+  process.exit(1);
+}
+
+let html = inlineFile(htmlFile);
+
+// Inline all assets
+html = inlineAssets(html);
+
+// Write the bundled HTML
+fs.writeFileSync(outFile, html);
+
+console.log(`Bundled HTML written to: ${outFile}`);
+console.log('You can now open this file directly in your browser!'); 

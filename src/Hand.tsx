@@ -1,5 +1,5 @@
 import React from 'react';
-import { TileImage } from './TileImage';
+import { TileImage, tileImages } from './TileImage';
 import type { Meld } from './Meld';
 import { MeldComponent } from './Meld';
 
@@ -16,7 +16,7 @@ export const Hand: React.FC<HandProps> = ({ hand, melds, orientation, isTsumo, c
   const BackTile = ({ size = 32 }) => (
     <span style={{ display: 'inline-block', width: size, height: size, position: 'relative', marginRight: 2, verticalAlign: 'middle' }}>
       <img
-        src={'/tiles/Back.svg'}
+        src={tileImages["Back"]}
         alt="back"
         style={{ width: size, height: size, position: 'absolute', left: 0, top: 0, zIndex: 1, pointerEvents: 'none', userSelect: 'none' }}
         draggable={false}

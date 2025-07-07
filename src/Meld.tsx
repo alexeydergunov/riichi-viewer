@@ -1,5 +1,5 @@
 import React from 'react';
-import { TileImage, tileSortKey } from './TileImage';
+import { TileImage, tileSortKey, tileImages } from './TileImage';
 
 // Meld type
 export interface Meld {
@@ -20,7 +20,7 @@ export const MeldComponent: React.FC<MeldComponentProps> = ({ meld, orientation 
   const BackTile = ({ size = 32 }) => (
     <span style={{ display: 'inline-block', width: size, height: size, position: 'relative', marginRight: 2, verticalAlign: 'middle' }}>
       <img
-        src={'/tiles/Back.svg'}
+        src={tileImages["Back"]}
         alt="back"
         style={{ width: size, height: size, position: 'absolute', left: 0, top: 0, zIndex: 1, pointerEvents: 'none', userSelect: 'none' }}
         draggable={false}

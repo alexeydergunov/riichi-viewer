@@ -3,23 +3,76 @@ import React from 'react';
 // Map log tile string to image file name
 export function tileToImage(tile: string): string | null {
   // Suited: 1m-9m, 1p-9p, 1s-9s, 5pr, 5sr
-  if (/^[1-9]m$/.test(tile)) return `Man${tile[0]}.svg`;
-  if (/^[1-9]p$/.test(tile)) return `Pin${tile[0]}.svg`;
-  if (/^[1-9]s$/.test(tile)) return `Sou${tile[0]}.svg`;
-  if (tile === '5pr') return 'Pin5-Dora.svg';
-  if (tile === '5sr') return 'Sou5-Dora.svg';
-  if (tile === '5mr') return 'Man5-Dora.svg';
+  if (/^[1-9]m$/.test(tile)) return `Man${tile[0]}`;
+  if (/^[1-9]p$/.test(tile)) return `Pin${tile[0]}`;
+  if (/^[1-9]s$/.test(tile)) return `Sou${tile[0]}`;
+  if (tile === '5pr') return 'Pin5-Dora';
+  if (tile === '5sr') return 'Sou5-Dora';
+  if (tile === '5mr') return 'Man5-Dora';
   // Honors
-  if (tile === 'E') return 'Ton.svg';
-  if (tile === 'S') return 'Nan.svg';
-  if (tile === 'W') return 'Shaa.svg';
-  if (tile === 'N') return 'Pei.svg';
-  if (tile === 'P') return 'Haku.svg';
-  if (tile === 'F') return 'Hatsu.svg';
-  if (tile === 'C') return 'Chun.svg';
+  if (tile === 'E') return 'Ton';
+  if (tile === 'S') return 'Nan';
+  if (tile === 'W') return 'Shaa';
+  if (tile === 'N') return 'Pei';
+  if (tile === 'P') return 'Haku';
+  if (tile === 'F') return 'Hatsu';
+  if (tile === 'C') return 'Chun';
   // Fallback
   return null;
 }
+
+// Create tileImages object with all tile images
+export const tileImages: Record<string, string> = {
+  // Basic tiles
+  'Front': '/tiles/Front.svg',
+  'Back': '/tiles/Back.svg',
+  'Blank': '/tiles/Blank.svg',
+  
+  // Manzu (characters)
+  'Man1': '/tiles/Man1.svg',
+  'Man2': '/tiles/Man2.svg',
+  'Man3': '/tiles/Man3.svg',
+  'Man4': '/tiles/Man4.svg',
+  'Man5': '/tiles/Man5.svg',
+  'Man5-Dora': '/tiles/Man5-Dora.svg',
+  'Man6': '/tiles/Man6.svg',
+  'Man7': '/tiles/Man7.svg',
+  'Man8': '/tiles/Man8.svg',
+  'Man9': '/tiles/Man9.svg',
+  
+  // Pinzu (dots)
+  'Pin1': '/tiles/Pin1.svg',
+  'Pin2': '/tiles/Pin2.svg',
+  'Pin3': '/tiles/Pin3.svg',
+  'Pin4': '/tiles/Pin4.svg',
+  'Pin5': '/tiles/Pin5.svg',
+  'Pin5-Dora': '/tiles/Pin5-Dora.svg',
+  'Pin6': '/tiles/Pin6.svg',
+  'Pin7': '/tiles/Pin7.svg',
+  'Pin8': '/tiles/Pin8.svg',
+  'Pin9': '/tiles/Pin9.svg',
+  
+  // Souzu (bamboo)
+  'Sou1': '/tiles/Sou1.svg',
+  'Sou2': '/tiles/Sou2.svg',
+  'Sou3': '/tiles/Sou3.svg',
+  'Sou4': '/tiles/Sou4.svg',
+  'Sou5': '/tiles/Sou5.svg',
+  'Sou5-Dora': '/tiles/Sou5-Dora.svg',
+  'Sou6': '/tiles/Sou6.svg',
+  'Sou7': '/tiles/Sou7.svg',
+  'Sou8': '/tiles/Sou8.svg',
+  'Sou9': '/tiles/Sou9.svg',
+  
+  // Honors
+  'Ton': '/tiles/Ton.svg',
+  'Nan': '/tiles/Nan.svg',
+  'Shaa': '/tiles/Shaa.svg',
+  'Pei': '/tiles/Pei.svg',
+  'Haku': '/tiles/Haku.svg',
+  'Hatsu': '/tiles/Hatsu.svg',
+  'Chun': '/tiles/Chun.svg',
+};
 
 export const TileImage: React.FC<{ tile: string; size?: number }> = ({ tile, size = 32 }) => {
   const img = tileToImage(tile);
@@ -34,7 +87,7 @@ export const TileImage: React.FC<{ tile: string; size?: number }> = ({ tile, siz
         verticalAlign: 'middle',
       }}>
         <img
-          src={'/tiles/Front.svg'}
+          src={tileImages["Front"]}
           alt="front"
           style={{
             width: size,
@@ -49,7 +102,7 @@ export const TileImage: React.FC<{ tile: string; size?: number }> = ({ tile, siz
           draggable={false}
         />
         <img
-          src={`/tiles/${img}`}
+          src={tileImages[img]}
           alt={tile}
           title={tile}
           style={{

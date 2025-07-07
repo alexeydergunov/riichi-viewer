@@ -1,5 +1,5 @@
 import React from 'react';
-import { TileImage } from './Board';
+import { TileImage } from './TileImage';
 
 export interface DiscardTile {
   tile: string;
@@ -27,7 +27,7 @@ export const DiscardZone: React.FC<DiscardZoneProps> = ({ tiles, orientation }) 
   }
 
   // Layout: 6x4 grid, but order and flex direction depend on orientation
-  let rows: JSX.Element[] = [];
+  let rows: React.ReactNode[] = [];
   if (orientation === 'top' || orientation === 'bottom') {
     for (let row = 0; row < 4; row++) {
       const slice = tiles.slice(

@@ -1,9 +1,9 @@
 import React from 'react';
-import { TileImage } from './Board';
+import { TileImage } from './TileImage';
 
 interface RoundInfoProps {
   round: string;
-  dealer: number;
+  dealer: number;   
   riichi: number;
   honba: number;
   doraMarkers: string[];

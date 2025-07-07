@@ -1,5 +1,5 @@
 import React from 'react';
-import { TileImage } from './Board';
+import { TileImage } from './TileImage';
 import type { Meld } from './Board';
 import { MeldComponent } from './Meld';
 

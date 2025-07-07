@@ -2,7 +2,8 @@ import React from 'react';
 import { DiscardZone } from './DiscardZone';
 import { Hand } from './Hand';
 import { RoundInfo } from './RoundInfo';
-import { TileImage, tileToImage, tileSortKey } from './TileImage';
+import { tileSortKey } from './TileImage';
+import type { Meld } from './Meld';
 
 interface BoardProps {
   events: any[];
@@ -16,13 +17,6 @@ interface DiscardTile {
   isRiichi?: boolean;
   isTsumogiri?: boolean;
   isCalled?: boolean;
-}
-
-// Meld type
-export interface Meld {
-  tiles: string[];
-  rotatedIdx: number;
-  type?: string;
 }
 
 interface PlayerState {
@@ -105,48 +99,54 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
       case 'daiminkan':
       case 'kakan':
       case 'ankan': {
+        if (e.type === 'kakan') {
+          // Find the existing pon meld and add the fourth tile
+          const melds = players[e.actor].melds;
+          const ponIdx = melds.findIndex(m => (m.type === 'pon' || m.type === 'kakan') && m.tiles.includes(e.pai));
+          if (ponIdx !== -1) {
+            melds[ponIdx].type = 'kakan';
+            melds[ponIdx].upgradeTile = e.pai; // Add upgradeTile property
+          }
+          // Remove the tile from hand
+          if (e.consumed) {
+            e.consumed.forEach((tile: string) => {
+              const idx = players[e.actor].hand.indexOf(tile);
+              if (idx !== -1) players[e.actor].hand.splice(idx, 1);
+            });
+          }
+          players[e.actor].hand.sort((a, b) => tileSortKey(a) - tileSortKey(b));
+          break;
+        }
         let meld: Meld;
         if (e.type === 'chi' || e.type === 'pon' || e.type === 'daiminkan') {
-          let from: 'previous' | 'opposite' | 'next' | null = null;
+          let from: 'previous' | 'opposite' | 'next' | undefined = undefined;
           if (typeof e.target === 'number') {
             const rel = (e.target - e.actor + 4) % 4;
-            if (rel === 1) from = 'previous';
+            if (rel === 1) from = 'next';
             else if (rel === 2) from = 'opposite';
-            else if (rel === 3) from = 'next';
+            else if (rel === 3) from = 'previous';
           }
           let tiles: string[] = [];
-          let rotatedIdx = 0;
+          let calledTile = '';
           if (e.consumed) {
-            if (from === 'previous') {
-              tiles = e.consumed.slice();
-              tiles.push(e.pai);
-              rotatedIdx = tiles.length - 1;
-            } else if (from === 'next') {
-              tiles = [e.pai, ...e.consumed];
-              rotatedIdx = 0;
-            } else if (from === 'opposite') {
-              const mid = Math.floor(e.consumed.length / 2);
-              tiles = e.consumed.slice(0, mid);
-              tiles.push(e.pai);
-              tiles = tiles.concat(e.consumed.slice(mid));
-              rotatedIdx = mid;
-            } else {
-              tiles = e.consumed.concat([e.pai]); // fallback
-              rotatedIdx = tiles.length - 1;
-            }
+            tiles = e.consumed.slice(); // Only non-called tiles
+            calledTile = e.pai;
           } else {
-            tiles = [e.pai];
-            rotatedIdx = 0;
+            tiles = [];
+            calledTile = e.pai;
           }
           meld = {
             tiles,
-            rotatedIdx,
+            calledTile,
+            from,
             type: e.type,
           };
         } else {
+          // ankan
           meld = {
             tiles: e.consumed ? e.consumed.slice() : [],
-            rotatedIdx: -1,
+            calledTile: e.pai,
+            from: undefined,
             type: e.type,
           };
         }
@@ -260,7 +260,7 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
         />
       </div>
       {/* Right player */}
-      <div style={{ gridRow: 2, gridColumn: 3, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', height: '100%', maxHeight: '100%', overflow: 'hidden' }}>
+      <div style={{ gridRow: 2, gridColumn: 3, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', height: '100%', maxHeight: '100%', overflow: 'visible' }}>
         <Hand
           hand={rotatedPlayers[1].hand}
           melds={rotatedPlayers[1].melds}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { TileImage } from './TileImage';
-import type { Meld } from './Board';
+import type { Meld } from './Meld';
 import { MeldComponent } from './Meld';
 
 interface HandProps {
@@ -49,11 +49,13 @@ export const Hand: React.FC<HandProps> = ({ hand, melds, orientation, isTsumo, c
               );
             })}
         <div style={{ width: 16 }} />
-        {melds.slice().reverse().map((m, j) => (
-          <span key={j} style={{ marginRight: 8 }}>{/* right margin for melds */}
-            {m && m.tiles && <MeldComponent meld={m} orientation={180} />}
-          </span>
-        ))}
+        <div style={{ overflow: 'visible', display: 'flex' }}>
+          {melds.slice().reverse().map((m, j) => (
+            <span key={j} style={{ marginRight: 8 }}>{/* right margin for melds */}
+              {m && m.tiles && <MeldComponent meld={m} orientation={180} />}
+            </span>
+          ))}
+        </div>
       </div>
     );
   } else if (orientation === 'bottom') {
@@ -81,11 +83,13 @@ export const Hand: React.FC<HandProps> = ({ hand, melds, orientation, isTsumo, c
               );
             })}
         <div style={{ width: 16 }} />
-        {melds.slice().reverse().map((m, j) => (
-          <span key={j} style={{ marginLeft: 8 }}>{/* left margin for melds */}
-            {m && m.tiles && <MeldComponent meld={m} orientation={0} />}
-          </span>
-        ))}
+        <div style={{ overflow: 'visible', display: 'flex' }}>
+          {melds.slice().reverse().map((m, j) => (
+            <span key={j} style={{ marginLeft: 8 }}>{/* left margin for melds */}
+              {m && m.tiles && <MeldComponent meld={m} orientation={0} />}
+            </span>
+          ))}
+        </div>
       </div>
     );
   } else if (orientation === 'left') {
@@ -115,7 +119,7 @@ export const Hand: React.FC<HandProps> = ({ hand, melds, orientation, isTsumo, c
               );
             })}
         <div style={{ height: 16 }} />
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+        <div style={{ overflow: 'visible', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
           {melds.slice().reverse().map((m, j) => (
             <span key={j} style={{ display: 'flex', flexDirection: 'column' }}>
               {m && m.tiles && <MeldComponent meld={m} orientation={90} />}
@@ -127,7 +131,7 @@ export const Hand: React.FC<HandProps> = ({ hand, melds, orientation, isTsumo, c
   } else if (orientation === 'right') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+        <div style={{ overflow: 'visible', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
           {melds.slice().reverse().map((m, j) => (
             <span key={j} style={{ display: 'flex', flexDirection: 'column-reverse' }}>
               {m && m.tiles && <MeldComponent meld={{ ...m, tiles: [...m.tiles].reverse() }} orientation={-90} />}

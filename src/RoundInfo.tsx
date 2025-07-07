@@ -63,7 +63,7 @@ export const RoundInfo: React.FC<RoundInfoProps> = ({ round, dealer, riichi, hon
       <div>Round: {round}</div>
       <div>Riichi: {riichi} | Honba: {honba}</div>
       <div style={{ marginTop: 4, color: '#fff', fontSize: 13, fontWeight: 'normal' }}>
-        Dora: {doraMarkers.map((d: string, i: number) => <TileImage key={i} tile={d} size={32} />)}
+        Dora indicators: {doraMarkers.map((d: string, i: number) => <TileImage key={i} tile={d} size={32} />)}
       </div>
     </div>
   </div>

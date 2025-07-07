@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import './App.css'
 import { Board } from './Board';
+import { TileImage } from './TileImage';
 
 function App() {
   const [logText, setLogText] = useState('');
@@ -18,6 +19,50 @@ function App() {
       logLineRefs.current[currentIndex]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
   }, [currentIndex, events.length]);
+
+  // Function to get the current round result (only if current event is hora/ryukyoku/end_kyoku)
+  const getCurrentRoundResult = () => {
+    if (events.length === 0 || currentIndex >= events.length) return null;
+    
+    const currentEvent = events[currentIndex];
+    let resultEvent = null;
+    
+    if (currentEvent.type === 'hora' || currentEvent.type === 'ryukyoku') {
+      resultEvent = currentEvent;
+    } else if (currentEvent.type === 'end_kyoku') {
+      // Find the hora or ryukyoku event that ended this round
+      for (let i = currentIndex - 1; i >= 0; i--) {
+        if (events[i].type === 'hora' || events[i].type === 'ryukyoku') {
+          resultEvent = events[i];
+          break;
+        }
+      }
+    } else {
+      return null;
+    }
+    
+    if (!resultEvent) return null;
+    
+    // Get player names
+    let names = ['Player 0', 'Player 1', 'Player 2', 'Player 3'];
+    for (let i = 0; i < events.length; i++) {
+      if (events[i].type === 'start_game' && events[i].names) {
+        names = events[i].names;
+        break;
+      }
+    }
+    
+    return {
+      type: resultEvent.type,
+      actor: resultEvent.actor,
+      target: resultEvent.target,
+      deltas: resultEvent.deltas,
+      uraMarkers: resultEvent.ura_markers || [],
+      names: names
+    };
+  };
+
+  const roundResult = getCurrentRoundResult();
 
   const handleLoadLog = () => {
     try {
@@ -177,6 +222,61 @@ function App() {
                 <span> | Viewing player: {viewedPlayer}</span>
               )}
             </div>
+            
+            {/* Round Results - only show when on hora/ryukyoku events */}
+            {roundResult && (
+              <div style={{ marginTop: '2em', padding: '1em', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+                <h3 style={{ margin: '0 0 0.5em 0', fontSize: '1.1em', color: '#495057' }}>Round Result</h3>
+                {roundResult.type === 'hora' ? (
+                  <div>
+                    <div style={{ marginBottom: '0.5em' }}>
+                      <strong>Winner:</strong> {roundResult.names[roundResult.actor]}
+                      {roundResult.target !== roundResult.actor ? (
+                        <span> (ron from {roundResult.names[roundResult.target]})</span>
+                      ) : (
+                        <span> (tsumo)</span>
+                      )}
+                    </div>
+                    <div style={{ marginBottom: '0.5em' }}>
+                      <strong>Score Changes:</strong>
+                      <div style={{ fontSize: '0.9em', marginTop: '0.25em' }}>
+                        {roundResult.deltas.map((delta: number, i: number) => (
+                          <div key={i} style={{ color: delta > 0 ? '#28a745' : delta < 0 ? '#dc3545' : '#6c757d' }}>
+                            {roundResult.names[i]}: {delta > 0 ? '+' : ''}{delta}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {roundResult.uraMarkers.length > 0 && (
+                      <div style={{ marginTop: '0.5em' }}>
+                        <strong>Ura-dora indicators:</strong>
+                        <div style={{ marginTop: '0.25em' }}>
+                          {roundResult.uraMarkers.map((marker: string, i: number) => (
+                            <TileImage key={i} tile={marker} size={32} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ marginBottom: '0.5em' }}>
+                      <strong>Draw (Ryukyoku)</strong>
+                    </div>
+                    <div>
+                      <strong>Score Changes:</strong>
+                      <div style={{ fontSize: '0.9em', marginTop: '0.25em' }}>
+                        {roundResult.deltas.map((delta: number, i: number) => (
+                          <div key={i} style={{ color: delta > 0 ? '#28a745' : delta < 0 ? '#dc3545' : '#6c757d' }}>
+                            {roundResult.names[i]}: {delta > 0 ? '+' : ''}{delta}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>

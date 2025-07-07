@@ -1,23 +1,27 @@
 import React from 'react';
 import { DiscardZone } from './DiscardZone';
 import { Hand } from './Hand';
+import { RoundInfo } from './RoundInfo';
 
 interface BoardProps {
   events: any[];
   currentIndex: number;
   viewedPlayer?: number | null;
+  showAllHands?: boolean;
 }
 
 interface DiscardTile {
   tile: string;
   isRiichi?: boolean;
+  isTsumogiri?: boolean;
+  isCalled?: boolean;
 }
 
 // Meld type
 export interface Meld {
   tiles: string[];
-  calledTile: string;
-  from: 'previous' | 'opposite' | 'next' | null;
+  rotatedIdx: number;
+  type?: string;
 }
 
 interface PlayerState {
@@ -142,7 +146,7 @@ function sortHandExceptLast(hand: string[]): string[] {
   return sorted;
 }
 
-export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer = 0 }) => {
+export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer = 0, showAllHands = false }) => {
   // Initialize state for 4 players
   const players: PlayerState[] = [0, 1, 2, 3].map(() => initialPlayerState());
   let doraMarkers: string[] = [];
@@ -185,7 +189,7 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
         break;
       case 'dahai': {
         const isRiichi = pendingRiichi[e.actor] === true;
-        players[e.actor].discards.push({ tile: e.pai, isRiichi });
+        players[e.actor].discards.push({ tile: e.pai, isRiichi, isTsumogiri: !!e.tsumogiri });
         pendingRiichi[e.actor] = false;
         // Remove from hand (if present)
         const idx = players[e.actor].hand.indexOf(e.pai);
@@ -209,33 +213,39 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
             else if (rel === 3) from = 'next';
           }
           let tiles: string[] = [];
+          let rotatedIdx = 0;
           if (e.consumed) {
             if (from === 'previous') {
               tiles = e.consumed.slice();
               tiles.push(e.pai);
+              rotatedIdx = tiles.length - 1;
             } else if (from === 'next') {
               tiles = [e.pai, ...e.consumed];
+              rotatedIdx = 0;
             } else if (from === 'opposite') {
               const mid = Math.floor(e.consumed.length / 2);
               tiles = e.consumed.slice(0, mid);
               tiles.push(e.pai);
               tiles = tiles.concat(e.consumed.slice(mid));
+              rotatedIdx = mid;
             } else {
               tiles = e.consumed.concat([e.pai]); // fallback
+              rotatedIdx = tiles.length - 1;
             }
           } else {
             tiles = [e.pai];
+            rotatedIdx = 0;
           }
           meld = {
             tiles,
-            calledTile: e.pai,
-            from,
+            rotatedIdx,
+            type: e.type,
           };
         } else {
           meld = {
             tiles: e.consumed ? e.consumed.slice() : [],
-            calledTile: '',
-            from: null,
+            rotatedIdx: -1,
+            type: e.type,
           };
         }
         players[e.actor].melds.push(meld);
@@ -244,6 +254,17 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
             const idx = players[e.actor].hand.indexOf(tile);
             if (idx !== -1) players[e.actor].hand.splice(idx, 1);
           });
+        }
+        // Mark the called tile in the discards of the player who discarded it
+        if (typeof e.target === 'number') {
+          const targetPlayer = e.target;
+          for (let i = players[targetPlayer].discards.length - 1; i >= 0; i--) {
+            const d = players[targetPlayer].discards[i];
+            if (d.tile === e.pai && !d.isCalled) {
+              d.isCalled = true;
+              break;
+            }
+          }
         }
         players[e.actor].hand.sort((a, b) => tileSortKey(a) - tileSortKey(b));
         break;
@@ -261,6 +282,18 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
     }
   }
 
+  // Find the most recent start_kyoku event at or before currentIndex
+  let kyotaku = 0;
+  let honbaCount = 0;
+  for (let i = currentIndex; i >= 0; i--) {
+    const e = events[i];
+    if (e.type === 'start_kyoku') {
+      kyotaku = e.kyotaku ?? 0;
+      honbaCount = e.honba ?? 0;
+      break;
+    }
+  }
+
   // Rotate players so that viewedPlayer is always at the bottom
   const rotate = (arr: any[], n: number) => arr.slice(n).concat(arr.slice(0, n));
   const vp = viewedPlayer ?? 0;
@@ -268,6 +301,9 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
   const rotatedNames = rotate(names, vp);
   const rotatedScores = rotate(scores, vp);
   const rotatedWinds = rotate(winds, vp);
+
+  // Compute dealer's index in rotated arrays
+  const dealerIndex = (dealer - vp + 4) % 4;
 
   // Discards for each player
   const discards = rotatedPlayers.map(p => p.discards);
@@ -296,6 +332,7 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
             melds={rotatedPlayers[2].melds}
             orientation="top"
             isTsumo={events[currentIndex]?.type === 'tsumo' && events[currentIndex]?.actor === ((viewedPlayer ?? 0) + 2) % 4}
+            closed={!showAllHands}
           />
         </div>
       </div>
@@ -307,6 +344,7 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
             melds={rotatedPlayers[0].melds}
             orientation="bottom"
             isTsumo={events[currentIndex]?.type === 'tsumo' && events[currentIndex]?.actor === (viewedPlayer ?? 0)}
+            closed={false}
           />
         </div>
       </div>
@@ -317,6 +355,7 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
           melds={rotatedPlayers[3].melds}
           orientation="left"
           isTsumo={events[currentIndex]?.type === 'tsumo' && events[currentIndex]?.actor === ((viewedPlayer ?? 0) + 3) % 4}
+          closed={!showAllHands}
         />
       </div>
       {/* Right player */}
@@ -326,48 +365,19 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
           melds={rotatedPlayers[1].melds}
           orientation="right"
           isTsumo={events[currentIndex]?.type === 'tsumo' && events[currentIndex]?.actor === ((viewedPlayer ?? 0) + 1) % 4}
+          closed={!showAllHands}
         />
       </div>
       {/* Center: Discards */}
-      <div style={{
-        position: 'absolute',
-        left: '50%',
-        top: '50%',
-        width: 240,
-        height: 240,
-        transform: 'translate(-50%, -50%)',
-        background: '#388e3c33',
-        borderRadius: 16,
-        boxShadow: '0 0 8px #0002',
-        zIndex: 2,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        pointerEvents: 'none',
-      }}>
-        {/* Player names and scores, positioned symmetrically */}
-        <div style={{ position: 'absolute', left: '50%', top: 24, transform: 'translate(-50%, 0)', textAlign: 'center', color: '#fff', fontWeight: 'bold', fontSize: 15, textShadow: '0 0 4px #000', pointerEvents: 'none', zIndex: 2 }}>
-          {rotatedNames[2]}<br /><span style={{ fontWeight: 'normal', fontSize: 13 }}>Score: {rotatedScores[2]}</span>
-        </div>
-        <div style={{ position: 'absolute', right: 16, top: '50%', transform: 'translate(0, -50%) rotate(-90deg)', textAlign: 'left', color: '#fff', fontWeight: 'bold', fontSize: 15, textShadow: '0 0 4px #000', pointerEvents: 'none', zIndex: 2 }}>
-          {rotatedNames[1]}<br /><span style={{ fontWeight: 'normal', fontSize: 13 }}>Score: {rotatedScores[1]}</span>
-        </div>
-        <div style={{ position: 'absolute', left: '50%', bottom: 24, transform: 'translate(-50%, 0)', textAlign: 'center', color: '#fff', fontWeight: 'bold', fontSize: 15, textShadow: '0 0 4px #000', pointerEvents: 'none', zIndex: 2 }}>
-          {rotatedNames[0]}<br /><span style={{ fontWeight: 'normal', fontSize: 13 }}>Score: {rotatedScores[0]}</span>
-        </div>
-        <div style={{ position: 'absolute', left: 16, top: '50%', transform: 'translate(0, -50%) rotate(90deg)', textAlign: 'right', color: '#fff', fontWeight: 'bold', fontSize: 15, textShadow: '0 0 4px #000', pointerEvents: 'none', zIndex: 2 }}>
-          {rotatedNames[3]}<br /><span style={{ fontWeight: 'normal', fontSize: 13 }}>Score: {rotatedScores[3]}</span>
-        </div>
-        {/* Center info: round, dealer, riichi, honba, dora */}
-        <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', color: '#fff', fontWeight: 'bold', fontSize: 16, zIndex: 3 }}>
-          <div>Round: {round} | Dealer: {dealer}</div>
-          <div>Riichi: {events.filter(e => e.type === 'reach').length} | Honba: {events.filter(e => e.type === 'honba').length}</div>
-          <div style={{ marginTop: 4, color: '#fff', fontSize: 13, fontWeight: 'normal' }}>
-            Dora: {doraMarkers.map((d: string, i: number) => <TileImage key={i} tile={d} size={32} />)}
-          </div>
-        </div>
-      </div>
+      <RoundInfo
+        round={round}
+        dealer={dealerIndex}
+        riichi={kyotaku}
+        honba={honbaCount}
+        doraMarkers={doraMarkers}
+        playerNames={rotatedNames}
+        playerScores={rotatedScores}
+      />
       {/* Discard zones */}
       {/* Top player discards */}
       <div style={{ position: 'absolute', left: '50%', bottom: 'calc(50% + 136px)', transform: 'translate(-50%, 0)', zIndex: 1 }}>
@@ -387,34 +397,4 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
       </div>
     </div>
   );
-};
-
-export function renderMeld(m: Meld, orientation: number) {
-  if (!m.calledTile || !m.from) {
-    return m.tiles.map((t, k) => (
-      <span key={k} style={{ display: 'inline-block', transform: `rotate(${orientation}deg)` }}>
-        <TileImage tile={t} size={32} />
-      </span>
-    ));
-  }
-  const tiles = m.tiles;
-  let calledIdx = 0;
-  if (m.from === 'previous') calledIdx = 0;
-  else if (m.from === 'opposite') calledIdx = Math.floor(tiles.length / 2);
-  else if (m.from === 'next') calledIdx = tiles.length - 1;
-  return tiles.map((t, k) => {
-    if (k === calledIdx) {
-      return (
-        <span key={k} style={{ display: 'inline-block', transform: `rotate(${orientation + 90}deg)` }}>
-          <TileImage tile={t} size={32} />
-        </span>
-      );
-    } else {
-      return (
-        <span key={k} style={{ display: 'inline-block', transform: `rotate(${orientation}deg)` }}>
-          <TileImage tile={t} size={32} />
-        </span>
-      );
-    }
-  });
-} 
+}; 

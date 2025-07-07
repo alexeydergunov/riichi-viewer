@@ -7,7 +7,8 @@ function App() {
   const [events, setEvents] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [viewedPlayer, setViewedPlayer] = useState<number | null>(null); // null = all players
+  const [viewedPlayer, setViewedPlayer] = useState<number>(0); // 0 = default viewed player
+  const [showAllHands, setShowAllHands] = useState(false);
 
   // For autoscroll
   const logLineRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -124,7 +125,7 @@ function App() {
       <div style={{ width: 800, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <h1 style={{ marginTop: '1em', marginBottom: 0 }}>Riichi Mahjong Log Viewer</h1>
         {events.length > 0 && (
-          <Board events={events} currentIndex={currentIndex} />
+          <Board events={events} currentIndex={currentIndex} viewedPlayer={viewedPlayer} showAllHands={showAllHands} />
         )}
       </div>
       {/* Right: Controls */}
@@ -150,18 +151,25 @@ function App() {
               <label htmlFor="player-select">Viewed Player: </label>
               <select
                 id="player-select"
-                value={viewedPlayer === null ? 'all' : viewedPlayer}
-                onChange={e => {
-                  const val = e.target.value;
-                  setViewedPlayer(val === 'all' ? null : parseInt(val));
-                }}
+                value={viewedPlayer}
+                onChange={e => setViewedPlayer(parseInt(e.target.value))}
               >
-                <option value="all">All</option>
                 <option value={0}>Player 0</option>
                 <option value={1}>Player 1</option>
                 <option value={2}>Player 2</option>
                 <option value={3}>Player 3</option>
               </select>
+            </div>
+            <div style={{ marginBottom: '1em' }}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={showAllHands}
+                  onChange={e => setShowAllHands(e.target.checked)}
+                  style={{ marginRight: 6 }}
+                />
+                Show all hands
+              </label>
             </div>
             <div>
               Event {currentIndex + 1} / {events.length}

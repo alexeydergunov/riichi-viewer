@@ -4,6 +4,8 @@ import { TileImage } from './Board';
 export interface DiscardTile {
   tile: string;
   isRiichi?: boolean;
+  isTsumogiri?: boolean;
+  isCalled?: boolean;
 }
 
 interface DiscardZoneProps {
@@ -33,12 +35,12 @@ export const DiscardZone: React.FC<DiscardZoneProps> = ({ tiles, orientation }) 
         orientation === 'top' ? (3 - row) * 6 + 6 : row * 6 + 6
       );
       const tilesRow = (orientation === 'top' ? slice.slice(0).reverse() : slice).map((d, i) => (
-        <span key={i} style={{ display: 'inline-block', transform: getTransform(!!d.isRiichi) }}>
+        <span key={i} style={{ display: 'inline-block', transform: getTransform(!!d.isRiichi), opacity: (d as any).isTsumogiri ? 0.6 : 1, filter: (d as any).isCalled ? 'brightness(0.5)' : undefined }}>
           <TileImage tile={d.tile} size={32} />
         </span>
       ));
       rows.push(
-        <div key={row} style={{ display: 'flex', flexDirection: 'row', justifyContent: orientation === 'top' ? 'flex-end' : 'flex-start', height: 32 }}>
+        <div key={row} style={{ display: 'flex', flexDirection: 'row', justifyContent: orientation === 'top' ? 'flex-end' : 'flex-start', height: 32, marginBottom: row < 3 ? 4 : 0 }}>
           {tilesRow}
         </div>
       );
@@ -54,12 +56,12 @@ export const DiscardZone: React.FC<DiscardZoneProps> = ({ tiles, orientation }) 
     for (let i = 0; i < 4; i++) {
       const col = orientation === 'left' ? colOrder[i] : colOrder[3 - i];
       rows.push(
-        <div key={col} style={{ display: 'flex', flexDirection: 'column', justifyContent: orientation === 'left' ? 'flex-start' : 'flex-end', width: 32, height: 192 }}>
+        <div key={col} style={{ display: 'flex', flexDirection: 'column', justifyContent: orientation === 'left' ? 'flex-start' : 'flex-end', width: 32, height: 192, marginRight: orientation === 'left' && i < 3 ? 4 : undefined, marginLeft: orientation === 'right' && i < 3 ? 4 : undefined }}>
           {Array.from({ length: 6 }).map((_, row) => {
             const idx = orientation === 'left' ? col * 6 + row : (3 - col) * 6 + (5 - row);
             const d = tiles[idx];
             return d ? (
-              <span key={row} style={{ display: 'inline-block', transform: getTransform(!!d.isRiichi) }}>
+              <span key={row} style={{ display: 'inline-block', transform: getTransform(!!d.isRiichi), opacity: (d as any).isTsumogiri ? 0.6 : 1, filter: (d as any).isCalled ? 'brightness(0.5)' : undefined }}>
                 <TileImage tile={d.tile} size={32} />
               </span>
             ) : null;

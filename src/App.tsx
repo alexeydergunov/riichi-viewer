@@ -64,6 +64,34 @@ function App() {
 
   const roundResult = getCurrentRoundResult();
 
+  // Compute which hands should be revealed for the current event
+  const getHandsRevealed = () => {
+    if (showAllHands) return [true, true, true, true];
+    if (events.length === 0 || currentIndex >= events.length) return [false, false, false, false];
+    let currentEvent = events[currentIndex];
+    // If end_kyoku, look back to the most recent hora/ryukyoku
+    if (currentEvent.type === 'end_kyoku') {
+      for (let i = currentIndex - 1; i >= 0; i--) {
+        if (events[i].type === 'hora' || events[i].type === 'ryukyoku') {
+          currentEvent = events[i];
+          break;
+        }
+      }
+    }
+    // Always show viewed player's hand
+    const arr = [false, false, false, false];
+    arr[viewedPlayer] = true;
+    if (currentEvent.type === 'hora') {
+      arr[currentEvent.actor] = true;
+    } else if (currentEvent.type === 'ryukyoku') {
+      if (Array.isArray(currentEvent.tenpais)) {
+        currentEvent.tenpais.forEach((i: number) => { arr[i] = true; });
+      }
+    }
+    return arr;
+  };
+  const handsRevealed = getHandsRevealed();
+
   const handleLoadLog = () => {
     try {
       const lines = logText.split('\n').filter(line => line.trim() !== '');
@@ -170,7 +198,7 @@ function App() {
       <div style={{ width: 800, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <h1 style={{ marginTop: '1em', marginBottom: 0 }}>Riichi Mahjong Log Viewer</h1>
         {events.length > 0 && (
-          <Board events={events} currentIndex={currentIndex} viewedPlayer={viewedPlayer} showAllHands={showAllHands} />
+          <Board events={events} currentIndex={currentIndex} viewedPlayer={viewedPlayer} showAllHands={showAllHands} handsRevealed={handsRevealed} />
         )}
       </div>
       {/* Right: Controls */}

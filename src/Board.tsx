@@ -10,6 +10,7 @@ interface BoardProps {
   currentIndex: number;
   viewedPlayer?: number | null;
   showAllHands?: boolean;
+  handsRevealed?: boolean[];
 }
 
 interface DiscardTile {
@@ -42,7 +43,7 @@ function sortHandExceptLast(hand: string[]): string[] {
   return sorted;
 }
 
-export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer = 0, showAllHands = false }) => {
+export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer = 0, showAllHands = false, handsRevealed }) => {
   // Initialize state for 4 players
   const players: PlayerState[] = [0, 1, 2, 3].map(() => initialPlayerState());
   let doraMarkers: string[] = [];
@@ -209,6 +210,26 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
   // Discards for each player
   const discards = rotatedPlayers.map(p => p.discards);
 
+  // Helper to determine if a player should have the tsumo gap for the current event
+  function isTsumoForPlayer(playerIdx: number) {
+    const event = events[currentIndex];
+    // If tsumo event and actor matches
+    if (event?.type === 'tsumo' && event.actor === playerIdx) return true;
+    // If hora event and actor==target (self-draw/tsumo)
+    if (event?.type === 'hora' && event.actor === playerIdx && event.actor === event.target) return true;
+    // If end_kyoku, look back for hora event
+    if (event?.type === 'end_kyoku') {
+      for (let i = currentIndex - 1; i >= 0; i--) {
+        const prev = events[i];
+        if (prev.type === 'hora' && prev.actor === playerIdx && prev.actor === prev.target) {
+          return true;
+        }
+        if (prev.type === 'hora' || prev.type === 'ryukyoku') break;
+      }
+    }
+    return false;
+  }
+
   // Table layout: grid
   return (
     <div style={{
@@ -232,8 +253,8 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
             hand={rotatedPlayers[2].hand}
             melds={rotatedPlayers[2].melds}
             orientation="top"
-            isTsumo={events[currentIndex]?.type === 'tsumo' && events[currentIndex]?.actor === ((viewedPlayer ?? 0) + 2) % 4}
-            closed={!showAllHands}
+            isTsumo={isTsumoForPlayer(((viewedPlayer ?? 0) + 2) % 4)}
+            closed={!(handsRevealed ? handsRevealed[(2 + vp) % 4] : showAllHands)}
           />
         </div>
       </div>
@@ -244,8 +265,8 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
             hand={rotatedPlayers[0].hand}
             melds={rotatedPlayers[0].melds}
             orientation="bottom"
-            isTsumo={events[currentIndex]?.type === 'tsumo' && events[currentIndex]?.actor === (viewedPlayer ?? 0)}
-            closed={false}
+            isTsumo={isTsumoForPlayer((viewedPlayer ?? 0))}
+            closed={!(handsRevealed ? handsRevealed[(0 + vp) % 4] : true)}
           />
         </div>
       </div>
@@ -255,8 +276,8 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
           hand={rotatedPlayers[3].hand}
           melds={rotatedPlayers[3].melds}
           orientation="left"
-          isTsumo={events[currentIndex]?.type === 'tsumo' && events[currentIndex]?.actor === ((viewedPlayer ?? 0) + 3) % 4}
-          closed={!showAllHands}
+          isTsumo={isTsumoForPlayer(((viewedPlayer ?? 0) + 3) % 4)}
+          closed={!(handsRevealed ? handsRevealed[(3 + vp) % 4] : showAllHands)}
         />
       </div>
       {/* Right player */}
@@ -265,8 +286,8 @@ export const Board: React.FC<BoardProps> = ({ events, currentIndex, viewedPlayer
           hand={rotatedPlayers[1].hand}
           melds={rotatedPlayers[1].melds}
           orientation="right"
-          isTsumo={events[currentIndex]?.type === 'tsumo' && events[currentIndex]?.actor === ((viewedPlayer ?? 0) + 1) % 4}
-          closed={!showAllHands}
+          isTsumo={isTsumoForPlayer(((viewedPlayer ?? 0) + 1) % 4)}
+          closed={!(handsRevealed ? handsRevealed[(1 + vp) % 4] : showAllHands)}
         />
       </div>
       {/* Center: Discards */}

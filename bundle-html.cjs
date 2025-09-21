@@ -4,7 +4,7 @@ const path = require('path');
 
 // --- CONFIG ---
 const distDir = path.join(__dirname, 'dist');
-const tilesDir = path.join(__dirname, '..', 'img', 'tiles');
+const tilesDir = path.join(__dirname, 'public', 'tiles');
 
 // --- ARGUMENTS ---
 let outFile = path.join(__dirname, 'bundle.html');

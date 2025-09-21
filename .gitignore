@@ -25,3 +25,6 @@ dist-ssr
 
 # Ignore the bundled HTML output
 bundle.html
+
+# Ignore files not meant to be committed
+not_to_commit/
